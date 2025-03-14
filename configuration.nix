@@ -72,6 +72,7 @@
 	brave
 	auto-cpufreq
 	clamav
+	git
 
   ];
 
