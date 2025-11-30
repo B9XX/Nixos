@@ -11,11 +11,10 @@
     ];
 
   # Bootloader.
-  boot.loader.grub.enable = true;
-  boot.loader.grub.device = "/dev/sda";
-  boot.loader.grub.useOSProber = true;
+  boot.loader.systemd-boot.enable = true;
+  boot.loader.efi.canTouchEfiVariables = true;
 
-  networking.hostName = "nixos"; # Define your hostname.
+  networking.hostName = "NIXTUF"; # Define your hostname.
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
 
   # Configure network proxy if necessary
@@ -43,37 +42,88 @@
     LC_TIME = "en_US.UTF-8";
   };
 
+  # Enable the X11 windowing system.
+  services.xserver.enable = true;
+
+  # Enable the GNOME Desktop Environment.
+  services.xserver.displayManager.gdm.enable = true;
+  services.xserver.desktopManager.gnome.enable = true;
+
   # Configure keymap in X11
   services.xserver.xkb = {
     layout = "us";
     variant = "";
   };
 
+  # Enable CUPS to print documents.
+  services.printing.enable = true;
+
+  # Enable sound with pipewire.
+  services.pulseaudio.enable = false;
+  security.rtkit.enable = true;
+  services.pipewire = {
+    enable = true;
+    alsa.enable = true;
+    alsa.support32Bit = true;
+    pulse.enable = true;
+    # If you want to use JACK applications, uncomment this
+    #jack.enable = true;
+
+    # use the example session manager (no others are packaged yet so this is enabled by default,
+    # no need to redefine it in your config for now)
+    #media-session.enable = true;
+  };
+
+  # Enable touchpad support (enabled default in most desktopManager).
+  # services.xserver.libinput.enable = true;
+
   # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users.b9x = {
+  users.users.b9nix = {
     isNormalUser = true;
-    description = "b9x";
+    description = "B9NIX";
     extraGroups = [ "networkmanager" "wheel" ];
-    packages = with pkgs; [];
+    packages = with pkgs; [
+    #  thunderbird
+    fastfetch
+    vim
+    ];
   };
 
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
 
+#####################################################################################################################################################
+  # Install flatpak.
+  services.flatpak.enable = true;
+   
+   # Set charging thershold
+   systemd.services.charging_battery_thershold = {
+    description = "charging_battery_thershold";
+    after = [ "network.target" ];
+    wantedBy = [ "multi-user.target" ]; 
+
+    serviceConfig = {
+    ExecStart = "${pkgs.bash}/bin/bash /usr/local/bin/battery_thershold.sh";  
+	};
+  };
+
+    # garbage collection
+    nix.gc = {
+     automatic = true;
+     dates = "weekly";
+     options = "--delete-older-than 15d";
+	};
+   # Auto update
+   system.autoUpgrade.enable = true;
+   system.autoUpgrade.allowReboot = false;
+
+###################################################################################################################################################
+
   # List packages installed in system profile. To search, run:
   # $ nix search wget
   environment.systemPackages = with pkgs; [
-	wget
-	vim 
-	bitwarden
-	obsidian
-	discord
-	syncthing
-	brave
-	auto-cpufreq
-	clamav
-	git
-
+  #vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
+  #  wget
   ];
 
   # Some programs need SUID wrappers, can be configured further or are
@@ -101,19 +151,6 @@
   # this value at the release version of the first install of this system.
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  system.stateVersion = "24.11"; # Did you read the comment?
-  
-  #Sound:
-   nixpkgs.config.pulseaudio = true;
+  system.stateVersion = "25.05"; # Did you read the comment?
 
-   #xfce:
-   services.xserver = {
-   enable = true ;
-   
-   desktopManager = {
-   xterm.enable = false;
-   xfce.enable = true;
-  };
- };
-  services.displayManager.defaultSession = "xfce";
 }
